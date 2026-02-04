@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>French Vocabulary Notebook</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Lucide icons as inline SVG components
+    const Book = ({ size = 24, className = "" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+      </svg>
+    );
+
+    const Plus = ({ size = 24 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12h14"/><path d="M12 5v14"/>
+      </svg>
+    );
+
+    const Trash2 = ({ size = 24 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+        <line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
+      </svg>
+    );
+
+    const Search = ({ size = 24 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+    );
+
+    const X = ({ size = 24 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+      </svg>
+    );
+
+    const Download = ({ size = 24 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+      </svg>
+    );
+
+    const Upload = ({ size = 24 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
+      </svg>
+    );
+
+    const FrenchVocabNotebook = () => {
+      const [words, setWords] = useState([]);
+      const [frenchWord, setFrenchWord] = useState('');
+      const [englishWord, setEnglishWord] = useState('');
+      const [gender, setGender] = useState('');
+      const [isTranslating, setIsTranslating] = useState(false);
+      const [searchTerm, setSearchTerm] = useState('');
+      const [error, setError] = useState('');
+      const [studyMode, setStudyMode] = useState(false);
+      const [studyWords, setStudyWords] = useState([]);
+      const [currentCardIndex, setCurrentCardIndex] = useState(0);
+      const [showAnswer, setShowAnswer] = useState(false);
+      const fileInputRef = useRef(null);
+
+      useEffect(() => {
+        const stored = localStorage.getItem('frenchVocab');
+        if (stored) {
+          try {
+            setWords(JSON.parse(stored));
+          } catch (e) {
+            console.error('Error loading saved words:', e);
+          }
+        }
+      }, []);
+
+      useEffect(() => {
+        localStorage.setItem('frenchVocab', JSON.stringify(words));
+      }, [words]);
+
+      const translateWord = async () => {
+        if (!frenchWord.trim()) return;
+        
+        setIsTranslating(true);
+        setError('');
+        
+        try {
+          let translation = null;
+          
+          try {
+            const response1 = await fetch(
+              `https://api.mymemory.translated.net/get?q=${encodeURIComponent(frenchWord)}&langpair=fr|en`
+            );
+            const data1 = await response1.json();
+            if (data1.responseStatus === 200 && data1.responseData?.translatedText) {
+              translation = data1.responseData.translatedText;
+            }
+          } catch (e) {
+            console.log('MyMemory failed, trying alternative...');
+          }
+          
+          if (!translation) {
+            const response2 = await fetch(
+              'https://libretranslate.com/translate',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  q: frenchWord,
+                  source: 'fr',
+                  target: 'en',
+                  format: 'text'
+                })
+              }
+            );
+            const data2 = await response2.json();
+            if (data2.translatedText) {
+              translation = data2.translatedText;
+            }
+          }
+          
+          if (translation) {
+            setEnglishWord(translation);
+          } else {
+            throw new Error('Translation not available');
+          }
+        } catch (err) {
+          setError('Translation failed. Please enter the English translation manually or try again.');
+          console.error('Translation error:', err);
+        } finally {
+          setIsTranslating(false);
+        }
+      };
+
+      const addWord = () => {
+        if (!frenchWord.trim() || !englishWord.trim()) {
+          setError('Please enter both French and English words');
+          return;
+        }
+
+        const newWord = {
+          id: Date.now(),
+          french: frenchWord.trim(),
+          english: englishWord.trim(),
+          gender: gender,
+          dateAdded: new Date().toISOString()
+        };
+
+        setWords([newWord, ...words]);
+        setFrenchWord('');
+        setEnglishWord('');
+        setGender('');
+        setError('');
+      };
+
+      const deleteWord = (id) => {
+        setWords(words.filter(word => word.id !== id));
+      };
+
+      const filteredWords = words.filter(word =>
+        word.french.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        word.english.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      const startStudyMode = () => {
+        const shuffled = [...words].sort(() => Math.random() - 0.5);
+        const selected = shuffled.slice(0, Math.min(20, words.length));
+        setStudyWords(selected);
+        setCurrentCardIndex(0);
+        setShowAnswer(false);
+        setStudyMode(true);
+      };
+
+      const exitStudyMode = () => {
+        setStudyMode(false);
+        setStudyWords([]);
+        setCurrentCardIndex(0);
+        setShowAnswer(false);
+      };
+
+      const nextCard = () => {
+        if (currentCardIndex < studyWords.length - 1) {
+          setCurrentCardIndex(currentCardIndex + 1);
+          setShowAnswer(false);
+        }
+      };
+
+      const previousCard = () => {
+        if (currentCardIndex > 0) {
+          setCurrentCardIndex(currentCardIndex - 1);
+          setShowAnswer(false);
+        }
+      };
+
+      const downloadBackup = () => {
+        const dataStr = JSON.stringify(words, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `french-vocab-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      };
+
+      const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const uploadedWords = JSON.parse(e.target.result);
+            
+            if (Array.isArray(uploadedWords)) {
+              setWords(uploadedWords);
+              setError('');
+              alert(`Successfully imported ${uploadedWords.length} words!`);
+            } else {
+              throw new Error('Invalid format');
+            }
+          } catch (err) {
+            setError('Failed to import backup. Please check the file format.');
+            alert('Failed to import backup. Please make sure you selected a valid backup file.');
+          }
+        };
+        reader.readAsText(file);
+        
+        event.target.value = '';
+      };
+
+      const triggerFileUpload = () => {
+        fileInputRef.current?.click();
+      };
+
+      if (studyMode) {
+        const currentWord = studyWords[currentCardIndex];
+        
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-4">
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h1 className="text-2xl font-bold text-gray-800">Study Mode</h1>
+                  <button
+                    onClick={exitStudyMode}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                  >
+                    Exit Study
+                  </button>
+                </div>
+                <p className="text-gray-600">
+                  Card {currentCardIndex + 1} of {studyWords.length}
+                </p>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-xl p-8 mb-6 min-h-[300px] flex flex-col items-center justify-center">
+                <div className="text-center w-full">
+                  <div className="mb-8">
+                    <p className="text-sm text-gray-500 mb-2">French Word:</p>
+                    <div className="flex items-center justify-center gap-3">
+                      {currentWord.gender && (
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          currentWord.gender === 'm' 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-pink-500 text-white'
+                        }`}>
+                          {currentWord.gender === 'm' ? '♂ le' : '♀ la'}
+                        </span>
+                      )}
+                      <p className={`text-4xl font-bold ${
+                        currentWord.gender === 'm' 
+                          ? 'text-blue-600' 
+                          : currentWord.gender === 'f'
+                          ? 'text-pink-600'
+                          : 'text-indigo-600'
+                      }`}>
+                        {currentWord.french}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {showAnswer ? (
+                    <div className="animate-fadeIn">
+                      <p className="text-sm text-gray-500 mb-2">English Translation:</p>
+                      <p className="text-3xl font-semibold text-gray-800">
+                        {currentWord.english}
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowAnswer(true)}
+                      className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-lg font-medium"
+                    >
+                      Show Answer
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={previousCard}
+                  disabled={currentCardIndex === 0}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={nextCard}
+                  disabled={currentCardIndex === studyWords.length - 1}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <div className="flex items-center gap-3 mb-2">
+                <Book size={32} className="text-indigo-600" />
+                <h1 className="text-3xl font-bold text-gray-800">French Vocabulary Notebook</h1>
+              </div>
+              <p className="text-gray-600">Build your French vocabulary with automatic translations</p>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Add New Word</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    French Word
+                  </label>
+                  <input
+                    type="text"
+                    value={frenchWord}
+                    onChange={(e) => setFrenchWord(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && translateWord()}
+                    placeholder="Enter French word..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gender (optional) & Translation
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setGender(gender === 'm' ? '' : 'm')}
+                      className={`w-10 h-10 rounded-lg border-2 transition font-medium text-lg ${
+                        gender === 'm'
+                          ? 'bg-blue-500 text-white border-blue-500'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                      }`}
+                      title="Masculine (le/un)"
+                    >
+                      ♂
+                    </button>
+                    <button
+                      onClick={() => setGender(gender === 'f' ? '' : 'f')}
+                      className={`w-10 h-10 rounded-lg border-2 transition font-medium text-lg ${
+                        gender === 'f'
+                          ? 'bg-pink-500 text-white border-pink-500'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-pink-400'
+                      }`}
+                      title="Feminine (la/une)"
+                    >
+                      ♀
+                    </button>
+                    <button
+                      onClick={translateWord}
+                      disabled={!frenchWord.trim() || isTranslating}
+                      className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+                    >
+                      {isTranslating ? 'Translating...' : 'Translate'}
+                    </button>
+                    <button
+                      onClick={() => window.open(`https://translate.google.com/?sl=fr&tl=en&text=${encodeURIComponent(frenchWord)}&op=translate`, '_blank')}
+                      disabled={!frenchWord.trim()}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition flex items-center gap-2"
+                      title="Open in Google Translate"
+                    >
+                      <Search size={16} />
+                      Google
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    English Translation
+                  </label>
+                  <input
+                    type="text"
+                    value={englishWord}
+                    onChange={(e) => setEnglishWord(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addWord()}
+                    placeholder="Translation will appear here..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+
+                {error && (
+                  <div className="text-red-600 text-sm">{error}</div>
+                )}
+
+                <button
+                  onClick={addWord}
+                  className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 font-medium"
+                >
+                  <Plus size={20} />
+                  Add to Notebook
+                </button>
+
+                <button
+                  onClick={startStudyMode}
+                  disabled={words.length === 0}
+                  className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 font-medium mt-2"
+                >
+                  <Book size={20} />
+                  Study Flashcards ({Math.min(20, words.length)} words)
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search your vocabulary..."
+                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Your Vocabulary ({filteredWords.length} {filteredWords.length === 1 ? 'word' : 'words'})
+                </h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={downloadBackup}
+                    disabled={words.length === 0}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center gap-2"
+                    title="Download backup"
+                  >
+                    <Download size={18} />
+                    Backup
+                  </button>
+                  <button
+                    onClick={triggerFileUpload}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                    title="Upload backup"
+                  >
+                    <Upload size={18} />
+                    Restore
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+              
+              {filteredWords.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  {words.length === 0 ? (
+                    <>
+                      <Book size={48} className="mx-auto mb-4 opacity-50" />
+                      <p>Your vocabulary notebook is empty.</p>
+                      <p className="text-sm">Add your first French word above!</p>
+                    </>
+                  ) : (
+                    <p>No words match your search.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredWords.map((word) => (
+                    <div
+                      key={word.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-baseline gap-3">
+                          {word.gender && (
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              word.gender === 'm' 
+                                ? 'bg-blue-500 text-white' 
+                                : 'bg-pink-500 text-white'
+                            }`}>
+                              {word.gender === 'm' ? '♂ m' : '♀ f'}
+                            </span>
+                          )}
+                          <span className={`text-lg font-semibold ${
+                            word.gender === 'm'
+                              ? 'text-blue-600'
+                              : word.gender === 'f'
+                              ? 'text-pink-600'
+                              : 'text-indigo-600'
+                          }`}>
+                            {word.french}
+                          </span>
+                          <span className="text-gray-400">→</span>
+                          <span className="text-lg text-gray-800">
+                            {word.english}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Added {new Date(word.dateAdded).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteWord(word.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Delete word"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<FrenchVocabNotebook />);
+  </script>
+</body>
+</html>
