@@ -64,7 +64,6 @@
       const [frenchWord, setFrenchWord] = useState('');
       const [englishWord, setEnglishWord] = useState('');
       const [gender, setGender] = useState('');
-      const [isTranslating, setIsTranslating] = useState(false);
       const [searchTerm, setSearchTerm] = useState('');
       const [error, setError] = useState('');
       const [studyMode, setStudyMode] = useState(false);
@@ -87,62 +86,6 @@
       useEffect(() => {
         localStorage.setItem('frenchVocab', JSON.stringify(words));
       }, [words]);
-
-      const translateWord = async () => {
-        if (!frenchWord.trim()) return;
-        
-        setIsTranslating(true);
-        setError('');
-        
-        try {
-          let translation = null;
-          
-          try {
-            const response1 = await fetch(
-              `https://api.mymemory.translated.net/get?q=${encodeURIComponent(frenchWord)}&langpair=fr|en`
-            );
-            const data1 = await response1.json();
-            if (data1.responseStatus === 200 && data1.responseData?.translatedText) {
-              translation = data1.responseData.translatedText;
-            }
-          } catch (e) {
-            console.log('MyMemory failed, trying alternative...');
-          }
-          
-          if (!translation) {
-            const response2 = await fetch(
-              'https://libretranslate.com/translate',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  q: frenchWord,
-                  source: 'fr',
-                  target: 'en',
-                  format: 'text'
-                })
-              }
-            );
-            const data2 = await response2.json();
-            if (data2.translatedText) {
-              translation = data2.translatedText;
-            }
-          }
-          
-          if (translation) {
-            setEnglishWord(translation);
-          } else {
-            throw new Error('Translation not available');
-          }
-        } catch (err) {
-          setError('Translation failed. Please enter the English translation manually or try again.');
-          console.error('Translation error:', err);
-        } finally {
-          setIsTranslating(false);
-        }
-      };
 
       const addWord = () => {
         if (!frenchWord.trim() || !englishWord.trim()) {
@@ -356,7 +299,12 @@
                     type="text"
                     value={frenchWord}
                     onChange={(e) => setFrenchWord(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && translateWord()}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && frenchWord.trim()) {
+                        navigator.clipboard.writeText(frenchWord.trim());
+                        alert('Copied to clipboard! Paste into your translation app.');
+                      }
+                    }}
                     placeholder="Enter French word..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
@@ -390,20 +338,16 @@
                       ♀
                     </button>
                     <button
-                      onClick={translateWord}
-                      disabled={!frenchWord.trim() || isTranslating}
+                      onClick={() => {
+                        if (frenchWord.trim()) {
+                          navigator.clipboard.writeText(frenchWord.trim());
+                          alert('Copied to clipboard! Paste into your translation app.');
+                        }
+                      }}
+                      disabled={!frenchWord.trim()}
                       className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
                     >
-                      {isTranslating ? 'Translating...' : 'Translate'}
-                    </button>
-                    <button
-                      onClick={() => window.open(`https://translate.google.com/?sl=fr&tl=en&text=${encodeURIComponent(frenchWord)}&op=translate`, '_blank')}
-                      disabled={!frenchWord.trim()}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition flex items-center gap-2"
-                      title="Open in Google Translate"
-                    >
-                      <Search size={16} />
-                      Google
+                      Copy to Translate
                     </button>
                   </div>
                 </div>
