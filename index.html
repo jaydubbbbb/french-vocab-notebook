@@ -1,637 +1,1109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>French Vocabulary Notebook</title>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mon Carnet">
+<title>Mon Carnet · French Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1410;
+    --paper: #f5f0e8;
+    --cream: #ede7d9;
+    --accent: #c8392b;
+    --accent-light: #f0d6d3;
+    --gold: #b8860b;
+    --muted: #8a7f72;
+    --line: #d4ccc0;
+    --learned: #2d6a4f;
+    --learned-bg: #d8f3dc;
+    --masc: #2c5f8a;
+    --masc-bg: #dbeafe;
+    --fem: #8a2c5f;
+    --fem-bg: #fce7f3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(200,57,43,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(184,134,11,0.05) 0%, transparent 50%);
+  }
+
+  /* HEADER */
+  header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 2px solid var(--ink);
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .logo {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+  }
+
+  .logo-main {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .logo-flag { color: var(--accent); }
+
+  /* NAV TABS */
+  nav {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  nav button {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.7rem;
+    border: 1.5px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+
+  nav button.active, nav button:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: var(--cream);
+  }
+
+  nav button.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* MAIN LAYOUT */
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  /* VIEWS */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* SEARCH BAR */
+  .search-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    align-items: center;
+  }
+
+  .search-wrap {
+    flex: 1;
+    position: relative;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    padding: 0.65rem 0.75rem 0.65rem 2.25rem;
+    border: 1.5px solid var(--line);
+    background: var(--cream);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-wrap input:focus { border-color: var(--ink); }
+
+  .search-icon {
+    position: absolute;
+    left: 0.7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+
+  .filter-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .filter-btn.active {
+    background: var(--learned);
+    color: white;
+    border-color: var(--learned);
+  }
+
+  .filter-btn:hover:not(.active) {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  /* ADD BUTTON */
+  .add-btn {
+    width: 100%;
+    padding: 0.85rem;
+    border: 2px dashed var(--line);
+    background: transparent;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .add-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  /* WORD CARD */
+  .word-card {
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    background: white;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    transition: box-shadow 0.15s, border-color 0.15s;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .word-card:hover {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border-color: var(--muted);
+  }
+
+  .word-card.learned {
+    border-left: 3px solid var(--learned);
+  }
+
+  .card-main {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.9rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .card-body { flex: 1; min-width: 0; }
+
+  .card-top {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.2rem;
+  }
+
+  .word-fr {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .gender-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+  }
+
+  .gender-m { background: var(--masc-bg); color: var(--masc); }
+  .gender-f { background: var(--fem-bg); color: var(--fem); }
+
+  .word-en {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .word-example {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+    padding-top: 0.3rem;
+    border-top: 1px solid var(--line);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-end;
+  }
+
+  .icon-btn {
+    background: none;
+    border: 1.5px solid var(--line);
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 5px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .icon-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .icon-btn.learned-btn.on { background: var(--learned); color: white; border-color: var(--learned); }
+  .icon-btn.delete-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+  }
+
+  .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.4;
+  }
+
+  .empty p {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-style: italic;
+  }
+
+  /* STATS */
+  .stats-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stat-chip {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    padding: 0.3rem 0.6rem;
+    background: var(--cream);
+    border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+
+  .stat-chip span {
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  /* MODAL */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,20,16,0.5);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal-bg.open {
+    display: flex;
+  }
+
+  .modal {
+    background: var(--paper);
+    border-radius: 16px 16px 0 0;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 780px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+
+  @media (min-width: 600px) {
+    .modal-bg { align-items: center; }
+    .modal { border-radius: 12px; max-width: 500px; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--muted);
+    padding: 0.2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    border-color: var(--ink);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 70px;
+    line-height: 1.5;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .save-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: opacity 0.15s;
+  }
+
+  .save-btn:hover { opacity: 0.85; }
+  .save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* QUIZ VIEW */
+  .quiz-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0;
+  }
+
+  .quiz-progress {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+  }
+
+  .flashcard {
+    width: 100%;
+    max-width: 400px;
+    min-height: 220px;
+    background: white;
+    border: 2px solid var(--ink);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 4px 4px 0 var(--ink);
+    user-select: none;
+  }
+
+  .flashcard:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+
+  .flashcard:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .card-word {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+
+  .card-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    position: absolute;
+    bottom: 1rem;
+  }
+
+  .card-answer {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--line);
+    width: 100%;
+  }
+
+  .card-answer.revealed { display: flex; }
+
+  .answer-en {
+    font-size: 1.1rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .answer-example {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .quiz-controls {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .quiz-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1.5px solid var(--line);
+    background: white;
+    color: var(--muted);
+  }
+
+  .quiz-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .quiz-btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .quiz-btn.primary:hover { opacity: 0.85; }
+
+  .quiz-setup {
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .quiz-setup h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .quiz-setup p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+  }
+
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+    text-align: left;
+  }
+
+  .quiz-option label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    transition: border-color 0.15s;
+  }
+
+  .quiz-option input[type=radio] { accent-color: var(--ink); }
+
+  .quiz-option label:has(input:checked) {
+    border-color: var(--ink);
+    background: var(--cream);
+  }
+
+  .quiz-result {
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+
+  .result-score {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+  }
+
+  .result-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 0.6rem 1.2rem;
+    border-radius: 100px;
+    z-index: 999;
+    transition: transform 0.25s ease;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* LOADING */
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* SYNC DOT */
+  .sync-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--learned);
+    margin-left: 0.5rem;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .sync-dot.syncing {
+    background: var(--gold);
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+</style>
 </head>
 <body>
-  <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+<header>
+  <div class="logo">
+    <div class="logo-main">Mon<span class="logo-flag"> C</span>arnet</div>
+    <div class="logo-sub">French Vocabulary <span class="sync-dot" id="syncDot"></span></div>
+  </div>
+  <nav>
+    <button class="active" onclick="switchView('list')">Words</button>
+    <button onclick="switchView('quiz')">Quiz</button>
+  </nav>
+</header>
 
-    // Lucide icons as inline SVG components
-    const Book = ({ size = 24, className = "" }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-      </svg>
-    );
+<main>
+  <!-- LIST VIEW -->
+  <div class="view active" id="view-list">
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="searchInput" placeholder="Search words…" oninput="renderList()">
+      </div>
+      <button class="filter-btn" id="filterBtn" onclick="toggleFilter()">✓ Learned</button>
+    </div>
+    <div class="stats-row" id="statsRow"></div>
+    <button class="add-btn" onclick="openModal()">＋ Add new word</button>
+    <div id="wordList"><div class="loading">Loading…</div></div>
+  </div>
 
-    const Plus = ({ size = 24 }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 12h14"/><path d="M12 5v14"/>
-      </svg>
-    );
+  <!-- QUIZ VIEW -->
+  <div class="view" id="view-quiz">
+    <div class="quiz-wrap" id="quizWrap"></div>
+  </div>
+</main>
 
-    const Trash2 = ({ size = 24 }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-        <line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
-      </svg>
-    );
+<!-- MODAL -->
+<div class="modal-bg" id="modalBg" onclick="handleModalBgClick(event)">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modalTitle">New Word</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>French Word *</label>
+        <input type="text" id="fieldFr" placeholder="le mot…">
+      </div>
+      <div class="form-group">
+        <label>Gender</label>
+        <select id="fieldGender">
+          <option value="">— none —</option>
+          <option value="m">Masculine (m)</option>
+          <option value="f">Feminine (f)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>English Translation *</label>
+      <input type="text" id="fieldEn" placeholder="the word…">
+    </div>
+    <div class="form-group">
+      <label>Example Sentence</label>
+      <textarea id="fieldEx" placeholder="Je mange une pomme…"></textarea>
+    </div>
+    <button class="save-btn" id="saveBtn" onclick="saveWord()">Save Word</button>
+  </div>
+</div>
 
-    const Search = ({ size = 24 }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-      </svg>
-    );
+<div class="toast" id="toast"></div>
 
-    const X = ({ size = 24 }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-      </svg>
-    );
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const Download = ({ size = 24 }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
-      </svg>
-    );
+  const firebaseConfig = {
+    apiKey: "AIzaSyB4bA2wvo2j33Ri7hLEiEdfYeXq-Hb5Nzg",
+    authDomain: "jw-french-notebook.firebaseapp.com",
+    projectId: "jw-french-notebook",
+    storageBucket: "jw-french-notebook.firebasestorage.app",
+    messagingSenderId: "577839503817",
+    appId: "1:577839503817:web:97f37857bc7ed733fd3018"
+  };
 
-    const Upload = ({ size = 24 }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
-      </svg>
-    );
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const col = collection(db, "words");
 
-    const Edit = ({ size = 24 }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-  </svg>
-);
+  // State
+  let words = [];
+  let editingId = null;
+  let filterLearned = false;
 
-const Check = ({ size = 24 }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-);
+  // Quiz state
+  let quizWords = [];
+  let quizIndex = 0;
+  let quizRevealed = false;
+  let quizScore = 0;
+  let quizMode = 'all'; // 'all' | 'unlearned'
 
-    const FrenchVocabNotebook = () => {
-      const [words, setWords] = useState([]);
-      const [frenchWord, setFrenchWord] = useState('');
-      const [englishWord, setEnglishWord] = useState('');
-      const [gender, setGender] = useState('');
-      const [searchTerm, setSearchTerm] = useState('');
-      const [error, setError] = useState('');
-      const [studyMode, setStudyMode] = useState(false);
-      const [studyWords, setStudyWords] = useState([]);
-      const [currentCardIndex, setCurrentCardIndex] = useState(0);
-      const [showAnswer, setShowAnswer] = useState(false);
-      const fileInputRef = useRef(null);
-      const [editingId, setEditingId] = useState(null);
-      const [editFrench, setEditFrench] = useState('');
-      const [editEnglish, setEditEnglish] = useState('');
-      const [editGender, setEditGender] = useState('');
+  const syncDot = document.getElementById('syncDot');
 
-      useEffect(() => {
-        const stored = localStorage.getItem('frenchVocab');
-        if (stored) {
-          try {
-            setWords(JSON.parse(stored));
-          } catch (e) {
-            console.error('Error loading saved words:', e);
-          }
-        }
-      }, []);
+  // Real-time listener
+  onSnapshot(col, (snapshot) => {
+    words = [];
+    snapshot.forEach(d => words.push({ id: d.id, ...d.data() }));
+    words.sort((a, b) => (a.fr || '').localeCompare(b.fr || ''));
+    syncDot.classList.remove('syncing');
+    renderList();
+    renderStats();
+  }, (err) => {
+    console.error(err);
+    showToast('Connection error');
+  });
 
-      useEffect(() => {
-        localStorage.setItem('frenchVocab', JSON.stringify(words));
-      }, [words]);
+  function setSyncing() { syncDot.classList.add('syncing'); }
 
-      const addWord = () => {
-        if (!frenchWord.trim() || !englishWord.trim()) {
-          setError('Please enter both French and English words');
-          return;
-        }
+  // RENDER LIST
+  window.renderList = function() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    let filtered = words.filter(w => {
+      const match = !q || (w.fr||'').toLowerCase().includes(q) || (w.en||'').toLowerCase().includes(q);
+      const learnedMatch = !filterLearned || w.learned;
+      return match && learnedMatch;
+    });
 
-        const newWord = {
-          id: Date.now(),
-          french: frenchWord.trim(),
-          english: englishWord.trim(),
-          gender: gender,
-          dateAdded: new Date().toISOString()
-        };
+    const list = document.getElementById('wordList');
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="empty"><div class="empty-icon">📖</div><p>${words.length === 0 ? 'No words yet — add your first!' : 'No words match your search.'}</p></div>`;
+      return;
+    }
 
-        setWords([newWord, ...words]);
-        setFrenchWord('');
-        setEnglishWord('');
-        setGender('');
-        setError('');
-      };
-
-      const deleteWord = (id) => {
-        setWords(words.filter(word => word.id !== id));
-      };
-
-      const startEdit = (word) => {
-        setEditingId(word.id);
-        setEditFrench(word.french);
-        setEditEnglish(word.english);
-        setEditGender(word.gender || '');
-      };
-      
-      const saveEdit = () => {
-        if (!editFrench.trim() || !editEnglish.trim()) {
-          setError('Please enter both French and English words');
-          return;
-        }
-        
-        setWords(words.map(word => 
-          word.id === editingId 
-            ? { ...word, french: editFrench.trim(), english: editEnglish.trim(), gender: editGender }
-            : word
-        ));
-        
-        setEditingId(null);
-        setEditFrench('');
-        setEditEnglish('');
-        setEditGender('');
-        setError('');
-      };
-      
-      const cancelEdit = () => {
-        setEditingId(null);
-        setEditFrench('');
-        setEditEnglish('');
-        setEditGender('');
-      };
-
-      const filteredWords = words.filter(word =>
-        word.french.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        word.english.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-      const startStudyMode = () => {
-        const shuffled = [...words].sort(() => Math.random() - 0.5);
-        const selected = shuffled.slice(0, Math.min(20, words.length));
-        setStudyWords(selected);
-        setCurrentCardIndex(0);
-        setShowAnswer(false);
-        setStudyMode(true);
-      };
-
-      const exitStudyMode = () => {
-        setStudyMode(false);
-        setStudyWords([]);
-        setCurrentCardIndex(0);
-        setShowAnswer(false);
-      };
-
-      const nextCard = () => {
-        if (currentCardIndex < studyWords.length - 1) {
-          setCurrentCardIndex(currentCardIndex + 1);
-          setShowAnswer(false);
-        }
-      };
-
-      const previousCard = () => {
-        if (currentCardIndex > 0) {
-          setCurrentCardIndex(currentCardIndex - 1);
-          setShowAnswer(false);
-        }
-      };
-
-      const downloadBackup = () => {
-        const dataStr = JSON.stringify(words, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `french-vocab-backup-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      };
-
-      const handleFileUpload = (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const uploadedWords = JSON.parse(e.target.result);
-            
-            if (Array.isArray(uploadedWords)) {
-              setWords(uploadedWords);
-              setError('');
-              alert(`Successfully imported ${uploadedWords.length} words!`);
-            } else {
-              throw new Error('Invalid format');
-            }
-          } catch (err) {
-            setError('Failed to import backup. Please check the file format.');
-            alert('Failed to import backup. Please make sure you selected a valid backup file.');
-          }
-        };
-        reader.readAsText(file);
-        
-        event.target.value = '';
-      };
-
-      const triggerFileUpload = () => {
-        fileInputRef.current?.click();
-      };
-
-      if (studyMode) {
-        const currentWord = studyWords[currentCardIndex];
-        
-        return (
-          <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-4">
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h1 className="text-2xl font-bold text-gray-800">Study Mode</h1>
-                  <button
-                    onClick={exitStudyMode}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
-                  >
-                    Exit Study
-                  </button>
-                </div>
-                <p className="text-gray-600">
-                  Card {currentCardIndex + 1} of {studyWords.length}
-                </p>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-xl p-8 mb-6 min-h-[300px] flex flex-col items-center justify-center">
-                <div className="text-center w-full">
-                  <div className="mb-8">
-                    <p className="text-sm text-gray-500 mb-2">French Word:</p>
-                    <div className="flex items-center justify-center gap-3">
-                      {currentWord.gender && (
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          currentWord.gender === 'm' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-pink-500 text-white'
-                        }`}>
-                          {currentWord.gender === 'm' ? '♂ le' : '♀ la'}
-                        </span>
-                      )}
-                      <p className={`text-4xl font-bold ${
-                        currentWord.gender === 'm' 
-                          ? 'text-blue-600' 
-                          : currentWord.gender === 'f'
-                          ? 'text-pink-600'
-                          : 'text-indigo-600'
-                      }`}>
-                        {currentWord.french}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {showAnswer ? (
-                    <div className="animate-fadeIn">
-                      <p className="text-sm text-gray-500 mb-2">English Translation:</p>
-                      <p className="text-3xl font-semibold text-gray-800">
-                        {currentWord.english}
-                      </p>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowAnswer(true)}
-                      className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-lg font-medium"
-                    >
-                      Show Answer
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={previousCard}
-                  disabled={currentCardIndex === 0}
-                  className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
-                >
-                  ← Previous
-                </button>
-                <button
-                  onClick={nextCard}
-                  disabled={currentCardIndex === studyWords.length - 1}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
-                >
-                  Next →
-                </button>
-              </div>
+    list.innerHTML = filtered.map(w => `
+      <div class="word-card ${w.learned ? 'learned' : ''}" id="card-${w.id}">
+        <div class="card-main">
+          <div class="card-body">
+            <div class="card-top">
+              <span class="word-fr">${esc(w.fr)}</span>
+              ${w.gender === 'm' ? '<span class="gender-badge gender-m">m</span>' : ''}
+              ${w.gender === 'f' ? '<span class="gender-badge gender-f">f</span>' : ''}
             </div>
+            <div class="word-en">${esc(w.en)}</div>
+            ${w.example ? `<div class="word-example">${esc(w.example)}</div>` : ''}
           </div>
-        );
-      }
-
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <div className="flex items-center gap-3 mb-2">
-                <Book size={32} className="text-indigo-600" />
-                <h1 className="text-3xl font-bold text-gray-800">French Vocabulary Notebook</h1>
-              </div>
-              <p className="text-gray-600">Build your French vocabulary with automatic translations</p>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Add New Word</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    French Word
-                  </label>
-                  <input
-                    type="text"
-                    value={frenchWord}
-                    onChange={(e) => setFrenchWord(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && frenchWord.trim()) {
-                        navigator.clipboard.writeText(frenchWord.trim());
-                        alert('Copied to clipboard! Paste into your translation app.');
-                      }
-                    }}
-                    placeholder="Enter French word..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Gender (optional) & Translation
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setGender(gender === 'm' ? '' : 'm')}
-                      className={`w-10 h-10 rounded-lg border-2 transition font-medium text-lg ${
-                        gender === 'm'
-                          ? 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                      }`}
-                      title="Masculine (le/un)"
-                    >
-                      ♂
-                    </button>
-                    <button
-                      onClick={() => setGender(gender === 'f' ? '' : 'f')}
-                      className={`w-10 h-10 rounded-lg border-2 transition font-medium text-lg ${
-                        gender === 'f'
-                          ? 'bg-pink-500 text-white border-pink-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-pink-400'
-                      }`}
-                      title="Feminine (la/une)"
-                    >
-                      ♀
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (frenchWord.trim()) {
-                          navigator.clipboard.writeText(frenchWord.trim());
-                          alert('Copied to clipboard! Paste into your translation app.');
-                        }
-                      }}
-                      disabled={!frenchWord.trim()}
-                      className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-                    >
-                      Copy to Translate
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    English Translation
-                  </label>
-                  <input
-                    type="text"
-                    value={englishWord}
-                    onChange={(e) => setEnglishWord(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addWord()}
-                    placeholder="Translation will appear here..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
-
-                {error && (
-                  <div className="text-red-600 text-sm">{error}</div>
-                )}
-
-                <button
-                  onClick={addWord}
-                  className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 font-medium"
-                >
-                  <Plus size={20} />
-                  Add to Notebook
-                </button>
-
-                <button
-                  onClick={startStudyMode}
-                  disabled={words.length === 0}
-                  className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 font-medium mt-2"
-                >
-                  <Book size={20} />
-                  Study Flashcards ({Math.min(20, words.length)} words)
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search your vocabulary..."
-                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={20} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Your Vocabulary ({filteredWords.length} {filteredWords.length === 1 ? 'word' : 'words'})
-                </h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={downloadBackup}
-                    disabled={words.length === 0}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center gap-2"
-                    title="Download backup"
-                  >
-                    <Download size={18} />
-                    Backup
-                  </button>
-                  <button
-                    onClick={triggerFileUpload}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-                    title="Upload backup"
-                  >
-                    <Upload size={18} />
-                    Restore
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".json"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </div>
-              </div>
-              
-              {filteredWords.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  {words.length === 0 ? (
-                    <>
-                      <Book size={48} className="mx-auto mb-4 opacity-50" />
-                      <p>Your vocabulary notebook is empty.</p>
-                      <p className="text-sm">Add your first French word above!</p>
-                    </>
-                  ) : (
-                    <p>No words match your search.</p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredWords.map((word) => (
-                    <div
-                      key={word.id}
-                      className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-                    >
-                      {editingId === word.id ? (
-                        // Edit mode
-                        <div className="space-y-3">
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={editFrench}
-                              onChange={(e) => setEditFrench(e.target.value)}
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                              placeholder="French word"
-                            />
-                            <button
-                              onClick={() => setEditGender(editGender === 'm' ? '' : 'm')}
-                              className={`w-10 h-10 rounded-lg border-2 transition font-medium text-lg ${
-                                editGender === 'm'
-                                  ? 'bg-blue-500 text-white border-blue-500'
-                                  : 'bg-white text-gray-700 border-gray-300'
-                              }`}
-                              title="Masculine"
-                            >
-                              ♂
-                            </button>
-                            <button
-                              onClick={() => setEditGender(editGender === 'f' ? '' : 'f')}
-                              className={`w-10 h-10 rounded-lg border-2 transition font-medium text-lg ${
-                                editGender === 'f'
-                                  ? 'bg-pink-500 text-white border-pink-500'
-                                  : 'bg-white text-gray-700 border-gray-300'
-                              }`}
-                              title="Feminine"
-                            >
-                              ♀
-                            </button>
-                          </div>
-                          <input
-                            type="text"
-                            value={editEnglish}
-                            onChange={(e) => setEditEnglish(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                            placeholder="English translation"
-                          />
-                          <div className="flex gap-2 justify-end">
-                            <button
-                              onClick={cancelEdit}
-                              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition flex items-center gap-2"
-                            >
-                              <X size={16} />
-                              Cancel
-                            </button>
-                            <button
-                              onClick={saveEdit}
-                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
-                            >
-                              <Check size={16} />
-                              Save
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        // View mode
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-baseline gap-3">
-                              {word.gender && (
-                                <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                  word.gender === 'm' 
-                                    ? 'bg-blue-500 text-white' 
-                                    : 'bg-pink-500 text-white'
-                                }`}>
-                                  {word.gender === 'm' ? '♂ m' : '♀ f'}
-                                </span>
-                              )}
-                              <span className={`text-lg font-semibold ${
-                                word.gender === 'm'
-                                  ? 'text-blue-600'
-                                  : word.gender === 'f'
-                                  ? 'text-pink-600'
-                                  : 'text-indigo-600'
-                              }`}>
-                                {word.french}
-                              </span>
-                              <span className="text-gray-400">→</span>
-                              <span className="text-lg text-gray-800">
-                                {word.english}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              Added {new Date(word.dateAdded).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => startEdit(word)}
-                              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-                              title="Edit word"
-                            >
-                              <Edit size={18} />
-                            </button>
-                            <button
-                              onClick={() => deleteWord(word.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                              title="Delete word"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          <div class="card-actions">
+            <button class="icon-btn learned-btn ${w.learned ? 'on' : ''}" title="${w.learned ? 'Mark unlearned' : 'Mark learned'}" onclick="toggleLearned('${w.id}', ${!!w.learned})">✓</button>
+            <button class="icon-btn" title="Edit" onclick="editWord('${w.id}')">✎</button>
+            <button class="icon-btn delete-btn" title="Delete" onclick="deleteWord('${w.id}')">✕</button>
           </div>
         </div>
-      );
-    };
+      </div>
+    `).join('');
+  }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<FrenchVocabNotebook />);
-  </script>
+  function renderStats() {
+    const total = words.length;
+    const learned = words.filter(w => w.learned).length;
+    document.getElementById('statsRow').innerHTML = total === 0 ? '' : `
+      <div class="stat-chip"><span>${total}</span> words</div>
+      <div class="stat-chip"><span>${learned}</span> learned</div>
+      <div class="stat-chip"><span>${total - learned}</span> to go</div>
+    `;
+  }
+
+  // FILTER
+  window.toggleFilter = function() {
+    filterLearned = !filterLearned;
+    const btn = document.getElementById('filterBtn');
+    btn.classList.toggle('active', filterLearned);
+    renderList();
+  }
+
+  // MODAL
+  window.openModal = function() {
+    editingId = null;
+    document.getElementById('modalTitle').textContent = 'New Word';
+    document.getElementById('fieldFr').value = '';
+    document.getElementById('fieldEn').value = '';
+    document.getElementById('fieldEx').value = '';
+    document.getElementById('fieldGender').value = '';
+    document.getElementById('modalBg').classList.add('open');
+    setTimeout(() => document.getElementById('fieldFr').focus(), 100);
+  }
+
+  window.editWord = function(id) {
+    const w = words.find(x => x.id === id);
+    if (!w) return;
+    editingId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Word';
+    document.getElementById('fieldFr').value = w.fr || '';
+    document.getElementById('fieldEn').value = w.en || '';
+    document.getElementById('fieldEx').value = w.example || '';
+    document.getElementById('fieldGender').value = w.gender || '';
+    document.getElementById('modalBg').classList.add('open');
+    setTimeout(() => document.getElementById('fieldFr').focus(), 100);
+  }
+
+  window.closeModal = function() {
+    document.getElementById('modalBg').classList.remove('open');
+  }
+
+  window.handleModalBgClick = function(e) {
+    if (e.target === document.getElementById('modalBg')) closeModal();
+  }
+
+  // SAVE
+  window.saveWord = async function() {
+    const fr = document.getElementById('fieldFr').value.trim();
+    const en = document.getElementById('fieldEn').value.trim();
+    const example = document.getElementById('fieldEx').value.trim();
+    const gender = document.getElementById('fieldGender').value;
+
+    if (!fr || !en) { showToast('French word and translation are required'); return; }
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    setSyncing();
+
+    try {
+      if (editingId) {
+        await updateDoc(doc(db, 'words', editingId), { fr, en, example, gender });
+        showToast('Word updated');
+      } else {
+        await addDoc(col, { fr, en, example, gender, learned: false, createdAt: serverTimestamp() });
+        showToast('Word added');
+      }
+      closeModal();
+    } catch (e) {
+      showToast('Error saving — check connection');
+      console.error(e);
+    }
+    btn.disabled = false;
+  }
+
+  // TOGGLE LEARNED
+  window.toggleLearned = async function(id, current) {
+    setSyncing();
+    await updateDoc(doc(db, 'words', id), { learned: !current });
+    showToast(!current ? '✓ Marked as learned' : 'Marked as unlearned');
+  }
+
+  // DELETE
+  window.deleteWord = async function(id) {
+    if (!confirm('Delete this word?')) return;
+    setSyncing();
+    await deleteDoc(doc(db, 'words', id));
+    showToast('Word deleted');
+  }
+
+  // QUIZ
+  window.switchView = function(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if (view === 'quiz') renderQuizSetup();
+  }
+
+  function renderQuizSetup() {
+    const unlearned = words.filter(w => !w.learned);
+    document.getElementById('quizWrap').innerHTML = `
+      <div class="quiz-setup">
+        <h2>Flashcard Quiz</h2>
+        <p>Test yourself on your French vocabulary.<br>${words.length} words total · ${unlearned.length} yet to learn.</p>
+        <div class="quiz-options">
+          <div class="quiz-option">
+            <label><input type="radio" name="qmode" value="all" checked> All ${words.length} words</label>
+          </div>
+          <div class="quiz-option">
+            <label><input type="radio" name="qmode" value="unlearned"> Unlearned only (${unlearned.length})</label>
+          </div>
+        </div>
+        <button class="save-btn" onclick="startQuiz()" ${words.length === 0 ? 'disabled' : ''}>
+          Start Quiz
+        </button>
+      </div>
+    `;
+  }
+
+  window.startQuiz = function() {
+    quizMode = document.querySelector('input[name="qmode"]:checked').value;
+    quizWords = shuffle(quizMode === 'unlearned' ? words.filter(w => !w.learned) : [...words]);
+    if (quizWords.length === 0) { showToast('No words to quiz!'); return; }
+    quizIndex = 0;
+    quizScore = 0;
+    quizRevealed = false;
+    renderQuizCard();
+  }
+
+  function renderQuizCard() {
+    if (quizIndex >= quizWords.length) {
+      renderQuizResult();
+      return;
+    }
+    const w = quizWords[quizIndex];
+    quizRevealed = false;
+    document.getElementById('quizWrap').innerHTML = `
+      <div class="quiz-progress">${quizIndex + 1} / ${quizWords.length}</div>
+      <div class="flashcard" onclick="revealCard()" id="flashcard">
+        <div class="card-word">${esc(w.fr)}</div>
+        ${w.gender === 'm' ? '<span class="gender-badge gender-m" style="margin-bottom:0.5rem">m</span>' : ''}
+        ${w.gender === 'f' ? '<span class="gender-badge gender-f" style="margin-bottom:0.5rem">f</span>' : ''}
+        <div class="card-answer" id="cardAnswer">
+          <div class="answer-en">${esc(w.en)}</div>
+          ${w.example ? `<div class="answer-example">${esc(w.example)}</div>` : ''}
+        </div>
+        <span class="card-hint" id="cardHint">tap to reveal</span>
+      </div>
+      <div class="quiz-controls" id="quizControls" style="display:none">
+        <button class="quiz-btn" onclick="quizAnswer(false)">✕ Missed</button>
+        <button class="quiz-btn primary" onclick="quizAnswer(true)">✓ Got it</button>
+      </div>
+    `;
+  }
+
+  window.revealCard = function() {
+    if (quizRevealed) return;
+    quizRevealed = true;
+    document.getElementById('cardAnswer').classList.add('revealed');
+    document.getElementById('cardHint').style.display = 'none';
+    document.getElementById('quizControls').style.display = 'flex';
+  }
+
+  window.quizAnswer = function(correct) {
+    if (correct) quizScore++;
+    quizIndex++;
+    renderQuizCard();
+  }
+
+  function renderQuizResult() {
+    const pct = Math.round((quizScore / quizWords.length) * 100);
+    const emoji = pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '📚';
+    document.getElementById('quizWrap').innerHTML = `
+      <div class="quiz-result">
+        <div class="result-score">${emoji} ${quizScore}/${quizWords.length}</div>
+        <div class="result-label">${pct}% correct</div>
+        <div style="display:flex;gap:0.75rem;justify-content:center">
+          <button class="quiz-btn" onclick="startQuiz()">Try Again</button>
+          <button class="quiz-btn primary" onclick="renderQuizSetup()">New Quiz</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // UTILS
+  function esc(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  window.showToast = function(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openModal(); }
+  });
+</script>
 </body>
 </html>
